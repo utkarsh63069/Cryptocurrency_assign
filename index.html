@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Crypto Market Data</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <h1>Crypto Market Data</h1>
+  <input type="text" id="searchInput" placeholder="Search..."/>
+  <button onclick="searchData()">Search</button>
+  <button onclick="sortData('market_cap')">Sort by Market Cap</button>
+  <button onclick="sortData('price_change_percentage')">Sort by % Change</button>
+  <table id="cryptoTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>ID</th>
+        <th>Image</th>
+        <th>Symbol</th>
+        <th>Current Price</th>
+        <th>Total Volume</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <script>
+    function fetchData() {
+      const apiUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false';
+
+      // Using .then
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => renderTable(data))
+        .catch(error => console.error('Error:', error));
+
+      // Using async/await
+      async function fetchDataAsync() {
+        try {
+          const response = await fetch(apiUrl);
+          const data = await response.json();
+          renderTable(data);
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      }
+      fetchDataAsync();
+    }
+
+    function renderTable(data) {
+      const tableBody = document.getElementById('tableBody');
+      tableBody.innerHTML = '';
+
+      data.forEach(coin => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${coin.name}</td>
+          <td>${coin.id}</td>
+          <td><img src="${coin.image}" alt="${coin.name}" width="20"></td>
+          <td>${coin.symbol}</td>
+          <td>${coin.current_price}</td>
+          <td>${coin.total_volume}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    function searchData() {
+      const searchInput = document.getElementById('searchInput');
+      const filter = searchInput.value.toUpperCase();
+      const tableBody = document.getElementById('tableBody');
+      const rows = tableBody.getElementsByTagName('tr');
+
+      for (let i = 0; i < rows.length; i++) {
+        const name = rows[i].getElementsByTagName('td')[0];
+        if (name) {
+          const txtValue = name.textContent || name.innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            rows[i].style.display = '';
+          } else {
+            rows[i].style.display = 'none';
+          }
+        }
+      }
+    }
+
+    function sortData(key) {
+      const tableBody = document.getElementById('tableBody');
+      const rows = Array.from(tableBody.getElementsByTagName('tr'));
+
+      rows.sort((a, b) => {
+        const aValue = parseFloat(a.getElementsByTagName('td')[key === 'market_cap' ? 5 : 6].textContent);
+        const bValue = parseFloat(b.getElementsByTagName('td')[key === 'market_cap' ? 5 : 6].textContent);
+        return key === 'market_cap' ? (bValue - aValue) : (bValue - aValue);
+      });
+
+      tableBody.innerHTML = '';
+      rows.forEach(row => tableBody.appendChild(row));
+    }
+
+    // Fetch data on page load
+    fetchData();
+  </script>
+</body>
+</html>
